@@ -1,0 +1,6 @@
+PyMuPDF==1.24.11
+chromadb==0.5.15
+openai==1.51.2
+Flask==3.0.3
+python-dotenv==1.0.1
+flask_cors==5.0.0
