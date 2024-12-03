@@ -26,8 +26,7 @@ def prompt_model_for_response(matched_result, query):
         top_p=0.6,
         frequency_penalty=0.7
     )
- 
-    # Get the model response
+
     result = response.choices[0].message.content.strip()
     return result
  
