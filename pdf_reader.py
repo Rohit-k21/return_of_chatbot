@@ -11,14 +11,14 @@ def read_pdf_as_bytes(pdf_path):
         pdf_bytes = pdf_file.read()
     return pdf_bytes
 
-def process_pdf_to_json(pdf_bytes, pdf_path):
+def process_pdf_to_text_file(pdf_bytes, pdf_path):
     def extract_text_from_pdf(pdf_bytes):
         pdf_document = fitz.open("pdf", pdf_bytes)
-        extracted_text = {}
+        extracted_text = []
         for page_num in range(len(pdf_document)):
             page = pdf_document.load_page(page_num)
             text = page.get_text()
-            extracted_text[f"page_{page_num + 1}"] = text
+            extracted_text.append(text)
         return extracted_text
 
     def clean_text(text):
@@ -28,24 +28,18 @@ def process_pdf_to_json(pdf_bytes, pdf_path):
         cleaned_text = re.sub(r'\s+', ' ', cleaned_text)
         return cleaned_text
 
-    def create_upload_file(pdf_content, pdf_path):
+    def create_text_file(pdf_content, pdf_path):
         pdf_name = os.path.basename(pdf_path).split(".")[0]
-        json_file_path = os.path.join(config.JSON_FILEPATH, f"{pdf_name}.json")
-        if os.path.exists(json_file_path):
-            return pdf_name+".json already exists"
+        txt_file_path = os.path.join(config.TXT_FILEPATH, f"{pdf_name}.txt")
+        if os.path.exists(txt_file_path):
+            return pdf_name + ".txt already exists"
+        
         extracted_text = extract_text_from_pdf(pdf_content)
-        clean_text_content = {}
-        for page_key, text in extracted_text.items():
-            cleaned_text = clean_text(text)
-            clean_text_content[page_key] = cleaned_text
-        with open(json_file_path, "w", encoding="utf-8") as f:
-            json.dump(clean_text_content, f, ensure_ascii=False, indent=4)
-        return "Pdf data extracted to "+pdf_name+".json Successfully"
+        cleaned_texts = [clean_text(text) for text in extracted_text]
+        full_cleaned_text = "\n".join(cleaned_texts)
+        
+        with open(txt_file_path, "w", encoding="utf-8") as f:
+            f.write(full_cleaned_text)
+        return "Pdf data extracted to " + pdf_name + ".txt Successfully"
 
-    return create_upload_file(pdf_bytes, pdf_path)
-
-# Example usage of the functions
-# pdf_path = "./pdfs_folder/file.pdf"
-# pdf_bytes = read_pdf_as_bytes(pdf_path)
-# result = process_pdf_to_json(pdf_bytes, pdf_path)
-# print(result)
+    return create_text_file(pdf_bytes, pdf_path)

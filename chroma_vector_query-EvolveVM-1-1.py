@@ -48,7 +48,7 @@ def query_similar_content(existing_collection, query):
     matched_result = ''.join(matched_result)
     page_numbers = ''.join(page_numbers)
     page_numbers = page_numbers.split('_', 1)[1]
-    print("FROM VECTOR QUERY....",str(matched_result),"page", str(page_numbers))
+    # print("FROM VECTOR QUERY....",str(matched_result),"page", str(page_numbers))
     return str(matched_result), str(page_numbers)
 
 # Example call (make sure to provide an existing collection name)

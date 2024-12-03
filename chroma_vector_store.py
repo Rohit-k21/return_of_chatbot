@@ -4,8 +4,13 @@ import chromadb
 from dotenv import load_dotenv
 from openai import AzureOpenAI
 from chromadb.config import DEFAULT_TENANT, DEFAULT_DATABASE, Settings
+import config
+from tiktoken import encoding_for_model
 
-def store_vectors_to_chroma(json_path, collection_name):
+CHUNK_SIZE = 500  
+OVERLAP_SIZE = 100
+
+def store_vectors_to_chroma(TXT_FILEPATH, collection_name):
     load_dotenv()
     AZURE_OPENAI_API_KEY = os.getenv('AZURE_OPENAI_API_KEY')
     AZURE_OPENAI_API_VERSION = os.getenv("AZURE_OPENAI_API_VERSION")
@@ -25,23 +30,30 @@ def store_vectors_to_chroma(json_path, collection_name):
         database=DEFAULT_DATABASE,
     )
 
-    try:
-        collection = chroma_client.get_collection(name=collection_name)
-        print(collection, "already exists.")
-        return "Collection "+collection_name+" already exists"
-    except Exception:
-        collection = chroma_client.get_or_create_collection(name=collection_name)
+    collection = chroma_client.get_or_create_collection(name=collection_name)
+    print("entred in collections - " , collection)
 
-    with open(json_path, 'r') as file:
-        data = json.load(file)
+    with open(TXT_FILEPATH, 'r', encoding='utf-8') as file:
+        text = file.read()
 
     text_chunks = []
-    for page, content in data.items():
-        text_chunks.append((page, content))
+    start = 0
+    while start < len(text):
+        end = start + CHUNK_SIZE
+        chunk = text[start:end]
+        text_chunks.append(chunk.strip())
+        start += CHUNK_SIZE - OVERLAP_SIZE
+
+    encoder = encoding_for_model(AZURE_OPENAI_EMBEDDING_MODEL)
 
     def get_embeddings(text_chunks):
         embeddings = []
-        for page, chunk in text_chunks:
+        total_tokens = 0
+        for idx, chunk in enumerate(text_chunks):
+            token_count = len(encoder.encode(chunk.strip()))
+            total_tokens += token_count
+            print(f"Chunk {idx + 1} uses {token_count} tokens.")
+
             response = openai_client.embeddings.create(
                 input=chunk.strip(),
                 model=AZURE_OPENAI_EMBEDDING_MODEL
@@ -49,7 +61,7 @@ def store_vectors_to_chroma(json_path, collection_name):
             embeddings.append({
                 "text": chunk.strip(),
                 "embedding": response.data[0].embedding,
-                "page": page
+                "chunk_id": f"chunk_{idx + 1}"
             })
         return embeddings
 
@@ -59,11 +71,11 @@ def store_vectors_to_chroma(json_path, collection_name):
                 documents=[item['text']],
                 embeddings=[item['embedding']],
                 ids=[str(hash(item['text']))],
-                metadatas=[{"page": item['page']}]
+                metadatas=[{"chunk_id": item['chunk_id']}]
             )
 
     embeddings = get_embeddings(text_chunks)
     store_embeddings_in_chroma(embeddings)
 
     print("Embeddings stored in ChromaDB successfully.")
-    return "Collection "+collection_name+" Created Successfully"
+    return "Collection " + collection_name + " Created Successfully"

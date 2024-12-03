@@ -85,4 +85,5 @@ def prompt_vectors_query():
         return jsonify(status=500, message='Error while querying the vectors and prompting the model', error=str(e))
 
 if __name__ == '__main__':
-    app.run(host="0.0.0.0", port=int("1999"), debug=True)
+    app.run()
+    # app.run(host="0.0.0.0", port=int("1999"), debug=False)

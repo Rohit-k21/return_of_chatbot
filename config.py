@@ -1,2 +1,6 @@
 PDF_FILEPATH = "./pdfs_folder"
 JSON_FILEPATH = "./json_data"
+OUTPUT_PATH = "./embedding_str_file"
+TEXT_FILEPATH= "./string_files"
+TXT_FILEPATH = "./text_data"
+HISTORY_FILEPATH = "./history_file"
